@@ -261,26 +261,6 @@ const StakeholderModel = (() => {
   const appId = 'country-ai-readiness-stakeholder-map';
   const stakeholders = Object.freeze([
   {
-    "id": "google",
-    "name": "Google Representative",
-    "shortName": "Google"
-  },
-  {
-    "id": "apple",
-    "name": "Apple Representative",
-    "shortName": "Apple"
-  },
-  {
-    "id": "microsoft",
-    "name": "Microsoft Representative",
-    "shortName": "Microsoft"
-  },
-  {
-    "id": "nvidia",
-    "name": "Nvidia Representative",
-    "shortName": "Nvidia"
-  },
-  {
     "id": "city",
     "name": "Local City Representative",
     "shortName": "Local city"
@@ -304,6 +284,26 @@ const StakeholderModel = (() => {
     "id": "energy-office",
     "name": "Energy Office Representative",
     "shortName": "Energy office"
+  },
+  {
+    "id": "google",
+    "name": "Google Representative",
+    "shortName": "Google"
+  },
+  {
+    "id": "apple",
+    "name": "Apple Representative",
+    "shortName": "Apple"
+  },
+  {
+    "id": "microsoft",
+    "name": "Microsoft Representative",
+    "shortName": "Microsoft"
+  },
+  {
+    "id": "nvidia",
+    "name": "Nvidia Representative",
+    "shortName": "Nvidia"
   }
 ].map(item => Object.freeze(item)));
   const positions = Object.freeze({supportive:'Supportive', conditional:'Conditional support', concerned:'Concerned', opposed:'Opposed', unknown:'Unknown / insufficient evidence'});
@@ -400,17 +400,25 @@ const StakeholderModel = (() => {
     return lines;
   }
   function diagram(data) {
-    const leftCount = Math.ceil(data.length/2);
-    const width = 1000, height = 160+(leftCount-1)*145;
+    const corporateIds = new Set(['google','apple','microsoft','nvidia']);
+    const nonCorporateRows = Math.ceil(data.filter(item => !corporateIds.has(item.id)).length/2);
+    const corporateRows = Math.ceil(data.filter(item => corporateIds.has(item.id)).length/2);
+    const width = 1000, height = 160+(nonCorporateRows+corporateRows-1)*145;
     const center = [500,height/2];
-    const anchors = data.map((item,i) => i<leftCount?[340,80+i*145]:[660,152.5+(i-leftCount)*145]);
+    let nonCorporateIndex = 0, corporateIndex = 0;
+    const anchors = data.map(item => {
+      const corporate = corporateIds.has(item.id);
+      const index = corporate ? corporateIndex++ : nonCorporateIndex++;
+      const row = Math.floor(index/2)+(corporate ? nonCorporateRows : 0);
+      return [index%2===0 ? 340 : 660,80+row*145];
+    });
     const lines = anchors.map(([x,y]) => `<line x1="${center[0]}" y1="${center[1]}" x2="${x}" y2="${y}" class="network-spoke"/>`).join('');
     const nodes = data.map((item,i) => {
       const [x,y] = anchors[i];
       const radius = item.influence===null?23:15+item.influence*5;
       const name = wrap(item.name,24);
-      const labelX = i<leftCount?275:725, labelY = y-18;
-      const anchor = i<leftCount?'end':'start';
+      const labelX = x<center[0]?275:725, labelY = y-18;
+      const anchor = x<center[0]?'end':'start';
       const position = item.position==='unknown'?'Unknown':model.positions[item.position] ?? 'Position not rated';
       const text = name.map((line,j) => `<tspan x="${labelX}" y="${labelY+j*24}">${escape(line)}</tspan>`).join('');
       const influence = item.influence===null?'—':item.influence+'/5';
@@ -477,3 +485,4 @@ const StakeholderModel = (() => {
 </script>
 </body>
 </html>
+
